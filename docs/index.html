@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>📅 Team Calendar Portal</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    h1 { color: #2c3e50; }
+    form { margin-bottom: 2em; }
+    label { display: block; margin-top: 1em; }
+    input, select { padding: 0.5em; width: 100%; max-width: 400px; }
+    button { margin-top: 1em; padding: 0.5em 1em; }
+    .downloads { margin-top: 3em; }
+  </style>
+</head>
+<body>
+  <h1>📅 Upload CSV to Generate Team Calendar</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label for="user">Your Email:</label>
+    <input type="email" name="user" required />
+
+    <label for="team">Team ID:</label>
+    <input type="text" name="team" required />
+
+    <label for="file">CSV File:</label>
+    <input type="file" name="file" accept=".csv" required />
+
+    <button type="submit">Upload & Generate</button>
+  </form>
+
+  <div id="status"></div>
+
+  <div class="downloads">
+    <h2>📥 Download Calendars</h2>
+    <ul id="downloadList"></ul>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const status = document.getElementById('status');
+    const downloadList = document.getElementById('downloadList');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(form);
+      status.textContent = "⏳ Uploading and generating calendar...";
+
+      try {
+        const res = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          status.textContent = "✅ Calendar generated successfully!";
+          downloadList.innerHTML = data.ics_files.map(file => {
+            const team = formData.get('team');
+            return `<li><a href="/calendar/${team}/${file}" target="_blank">${file}</a></li>`;
+          }).join('');
+        } else {
+          status.textContent = `❌ Error: ${data.error}`;
+        }
+      } catch (err) {
+        status.textContent = `❌ Upload failed: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

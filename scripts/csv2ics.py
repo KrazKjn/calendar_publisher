@@ -96,7 +96,7 @@ def read_events(csv_file):
             events_by_team[team].append(event)
     return events_by_team, samples
 
-def create_ics(team, events, output_dir, datetime_format):
+def create_ics_old(team, events, output_dir, datetime_format):
     cal = Calendar()
     
     # ✅ Use ContentLine for metadata
@@ -136,6 +136,76 @@ def create_ics(team, events, output_dir, datetime_format):
 
     return filename
 
+def create_ics(team, events, output_dir, datetime_format, timezone=None, branding=None):
+    cal = Calendar()
+
+    # Branding defaults
+    branding = branding or {}
+    cal_name = branding.get("name", team)
+    cal_desc = branding.get("description", f"Calendar for {team}")
+    cal_color = branding.get("color")  # Optional, not standard in ICS
+    cal_footer = branding.get("footer", "")
+
+    # Calendar metadata
+    cal.extra.append(ContentLine(name="X-WR-CALNAME", value=cal_name))
+    cal.extra.append(ContentLine(name="NAME", value=cal_name))
+    cal.extra.append(ContentLine(name="X-WR-CALDESC", value=cal_desc))
+    if cal_color:
+        cal.extra.append(ContentLine(name="X-APPLE-CALENDAR-COLOR", value=cal_color))  # Apple-specific
+
+    for e in events:
+        try:
+            event = Event()
+            event.name = e["title"]
+            dt_start = datetime.strptime(e["start"], datetime_format)
+            dt_end = datetime.strptime(e["end"], datetime_format)
+
+            # Apply timezone if provided
+            if timezone:
+                try:
+                    import zoneinfo
+                    tz = zoneinfo.ZoneInfo(timezone)
+                    dt_start = dt_start.replace(tzinfo=tz)
+                    dt_end = dt_end.replace(tzinfo=tz)
+                except Exception as tz_err:
+                    print(f"⚠️ Timezone error for '{team}': {tz_err}")
+
+            event.begin = dt_start
+            event.end = dt_end
+            event.location = e["location"]
+            event.description = e["description"]
+            cal.events.add(event)
+        except ValueError as ve:
+            print(f"❌ Error parsing event '{e['title']}' with format '{datetime_format}': {ve}")
+            raise
+
+    # Optional footer event
+    if cal_footer:
+        footer_event = Event()
+        footer_event.name = "Calendar Footer"
+        footer_event.description = cal_footer
+        footer_event.begin = dt_end  # Place it after last event
+        footer_event.duration = {"minutes": 1}
+        cal.events.add(footer_event)
+
+    filename = f"{team.replace(' ', '_')}.ics"
+    filepath = os.path.join(output_dir, filename)
+
+    # Add blank lines after header and between events
+    lines = cal.serialize().splitlines()
+    output_lines = []
+    for line in lines:
+        output_lines.append(line)
+        if line.strip() == "BEGIN:VCALENDAR":
+            output_lines.append("")
+        elif line.strip() == "END:VEVENT":
+            output_lines.append("")
+
+    with open(filepath, "w", encoding="utf-8") as f:
+        f.write("\n".join(output_lines) + "\n")
+
+    return filename
+
 def generate_download_page(file_list, output_dir):
     page_path = os.path.join(output_dir, "download_links.md")
     with open(page_path, "w", encoding="utf-8") as f:  # ✅ Add encoding
@@ -144,7 +214,45 @@ def generate_download_page(file_list, output_dir):
             team_name = filename.replace(".ics", "").replace("_", " ")
             f.write(f"- **{team_name}**: [Download {filename}](./{filename})\n")
 
-def process_csv(input_path, output_dir="calendars", datetime_format=None):
+# def process_csv(input_path, output_dir="calendars", datetime_format=None):
+    # validate_csv_path(input_path)
+    # ensure_output_dir(output_dir)
+
+    # events_by_team, samples = read_events(input_path)
+
+    # if not datetime_format:
+        # datetime_format = detect_datetime_format(samples)
+        # if not datetime_format:
+            # raise ValueError("Unable to auto-detect datetime format.")
+
+    # generated_files = []
+    # for team, events in events_by_team.items():
+        # filename = create_ics(team, events, output_dir, datetime_format)
+        # generated_files.append(filename)
+
+    # generate_download_page(generated_files, output_dir)
+    # return {
+        # "output_dir": output_dir,
+        # "generated_files": generated_files,
+        # "datetime_format": datetime_format
+    # }
+
+def process_csv(input_or_config, output_dir=None, datetime_format=None):
+    # Determine mode: hosted (dict) or CLI (str)
+    if isinstance(input_or_config, dict):
+        # Hosted mode
+        input_path = input_or_config.get("csv")
+        output_dir = input_or_config.get("output", "calendars")
+        datetime_format = input_or_config.get("datetime_format", datetime_format)
+        timezone = input_or_config.get("timezone")
+        branding = input_or_config.get("branding", {})
+    else:
+        # CLI mode
+        input_path = input_or_config
+        output_dir = output_dir or "calendars"
+        timezone = None
+        branding = {}
+
     validate_csv_path(input_path)
     ensure_output_dir(output_dir)
 
@@ -157,7 +265,14 @@ def process_csv(input_path, output_dir="calendars", datetime_format=None):
 
     generated_files = []
     for team, events in events_by_team.items():
-        filename = create_ics(team, events, output_dir, datetime_format)
+        filename = create_ics(
+            team,
+            events,
+            output_dir,
+            datetime_format,
+            timezone=timezone,
+            branding=branding
+        )
         generated_files.append(filename)
 
     generate_download_page(generated_files, output_dir)

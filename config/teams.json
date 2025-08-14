@@ -11,11 +11,15 @@
       "allowed_users": [
         "coach.hhsvb@gmail.com",
         "krazkjn@msn.com"
-      ]
+      ],
+      "role_map": {
+        "coach.hhsvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      }
     },
     {
       "id": "hhs_baseball",
-      "name": "HHS Baseyball",
+      "name": "HHS Baseball",
       "color": "#441C55",
       "logo": "assets/hhs_baseball-logo.png",
       "csv": "data/hhs_baseball.csv",
@@ -24,7 +28,11 @@
       "allowed_users": [
         "coach.hhsvb@gmail.com",
         "krazkjn@msn.com"
-      ]
+      ],
+      "role_map": {
+        "coach.hhsvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      }
     }
   ]
 }

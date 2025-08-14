@@ -1,6 +1,5 @@
 {
-  "allowed_users": [
-	"coach.hhsvb@gmail.com",
-	"krazkjn@msn.com"
-  ]
+  "krazkjn@msn.com": "admin",
+  "coach.hhsvb@gmail.comach.jane@example.com": "editor",
+  "viewer.bob@example.com": "viewer"
 }
