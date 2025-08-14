@@ -1,0 +1,30 @@
+{
+  "teams": [
+    {
+      "id": "hhs_volleyball",
+      "name": "HHS Volleyball",
+      "color": "#bf922a",
+      "logo": "assets/hhs_volleyball-logo.png",
+      "csv": "data/hhs_volleyball.csv",
+      "output": "calendars/hhs_volleyball.ics",
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.hhsvb@gmail.com",
+        "krazkjn@msn.com"
+      ]
+    },
+    {
+      "id": "hhs_baseball",
+      "name": "HHS Baseyball",
+      "color": "#441C55",
+      "logo": "assets/hhs_baseball-logo.png",
+      "csv": "data/hhs_baseball.csv",
+      "output": "calendars/hhs_baseball.ics",
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.hhsvb@gmail.com",
+        "krazkjn@msn.com"
+      ]
+    }
+  ]
+}
