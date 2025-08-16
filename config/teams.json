@@ -6,7 +6,7 @@
       "color": "#bf922a",
       "logo": "assets/hhs_volleyball-logo.png",
       "csv": "data/hhs_volleyball.csv",
-      "output": "calendars/hhs_volleyball.ics",
+      "output": "calendars/hhs_volleyball",
       "timezone": "America/Chicago",
       "allowed_users": [
         "coach.hhsvb@gmail.com",
@@ -15,15 +15,20 @@
       "role_map": {
         "coach.hhsvb@gmail.com": "editor",
         "krazkjn@msn.com": "viewer"
-      }
-    },
+      },
+	  "branding": {
+		"calendar_name": "HHS Volleyball",
+		"calendar_desc": "HHS Volleyball Events",
+		"ttl": "PT1H"
+	  }
+	},
     {
       "id": "hhs_baseball",
       "name": "HHS Baseball",
       "color": "#441C55",
       "logo": "assets/hhs_baseball-logo.png",
       "csv": "data/hhs_baseball.csv",
-      "output": "calendars/hhs_baseball.ics",
+      "output": "calendars/hhs_baseball",
       "timezone": "America/Chicago",
       "allowed_users": [
         "coach.hhsvb@gmail.com",
@@ -32,7 +37,12 @@
       "role_map": {
         "coach.hhsvb@gmail.com": "editor",
         "krazkjn@msn.com": "viewer"
-      }
+      },
+	  "branding": {
+		"calendar_name": "HHS Baseball",
+		"calendar_desc": "HHS Baseball Events",
+		"ttl": "PT1H"
+	  }
     }
   ]
 }

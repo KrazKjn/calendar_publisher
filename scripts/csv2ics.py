@@ -8,18 +8,10 @@ import sys
 import traceback
 from collections import defaultdict
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from ics import Calendar, Event
 from ics.grammar.parse import ContentLine
 from utils import validate_csv_path, ensure_output_dir
-
-COMMON_FORMATS = [
-    "%Y-%m-%d %H:%M",
-    "%m/%d/%Y %H:%M",
-    "%m/%d/%Y %I:%M %p",
-    "%Y-%m-%d %I:%M %p",
-    "%d-%m-%Y %H:%M",
-    "%d/%m/%Y %H:%M",
-]
 
 def find_column(columns, patterns):
     for pattern in patterns:
@@ -29,6 +21,105 @@ def find_column(columns, patterns):
                 return col
     return None
 
+def apply_timezone1(dt_local, timezone_str):
+    """
+    Converts naive datetime to aware datetime in the given timezone.
+    Assumes input is in local time.
+    """
+    try:
+        tz = ZoneInfo(timezone_str)
+        # Step 1: Assume dt_local is in local time
+        dt_local = dt_local.replace(tzinfo=ZoneInfo("UTC"))  # or your assumed source zone
+        # Step 2: Convert to target zone
+        return dt_local.astimezone(tz)
+    except Exception as tz_err:
+        print(f"⚠️ Timezone error: {tz_err}")
+        return dt_local  # fallback to naive
+
+def apply_timezone(dt_local, timezone_str, input_format="%m/%d/%Y %H:%M"):
+    """
+    Converts a naive datetime or datetime string to an aware datetime in the given timezone.
+    Handles None, string, and datetime inputs.
+    """
+    try:
+        if dt_local is None:
+            raise ValueError("Input datetime is None")
+
+        tz = ZoneInfo(timezone_str)
+
+        # If input is a string, parse it
+        if isinstance(dt_local, str):
+            dt_local = datetime.strptime(dt_local.strip(), input_format)
+
+        # If naive, assume it's in UTC or local and convert
+        if dt_local.tzinfo is None:
+            dt_local = dt_local.replace(tzinfo=ZoneInfo("UTC"))  # or your assumed source zone
+
+        # Convert to target timezone
+        return dt_local.astimezone(tz)
+
+    except Exception as tz_err:
+        print(f"⚠️ Timezone error: {tz_err}")
+        return dt_local  # fallback
+
+def is_valid_iso_duration(ttl):
+    return re.match(r"^P(T?\d+[HMS])?$", ttl) is not None
+
+def add_ttl(cal, branding):
+    ttl = branding.get("ttl", "P1D")
+    if not is_valid_iso_duration(ttl):
+        ttl = "P1D"  # fallback
+    cal.extra.append(ContentLine(name="REFRESH-INTERVAL", params={"VALUE": ["DURATION"]}, value=ttl))
+    #cal.extra.append(ContentLine(name="REFRESH-INTERVAL;VALUE=DURATION", value=ttl))
+    cal.extra.append(ContentLine(name="X-PUBLISHED-TTL", value=ttl))
+    line = ContentLine(name="REFRESH-INTERVAL", params={"VALUE": ["DURATION"]}, value=ttl)
+
+def clean_datetime_string(dt_str):
+    """
+    Cleans and parses a wide variety of date/time strings into a datetime object.
+    
+    Args:
+        dt_str (str): Raw date/time string.
+    
+    Returns:
+        datetime or None: Parsed datetime object or None if invalid.
+    """
+    if not isinstance(dt_str, str):
+        return None
+
+    # Step 1: Normalize delimiters and casing
+    dt_str = dt_str.strip()
+    dt_str = re.sub(r"[.\-]", "/", dt_str)  # Convert . and - to /
+    dt_str = re.sub(r"T", " ", dt_str)      # ISO T separator
+    dt_str = re.sub(r"\s+", " ", dt_str)    # Collapse multiple spaces
+    dt_str = dt_str.upper()                 # Normalize AM/PM casing
+
+    # Step 2: Remove seconds if present (optional)
+    dt_str = re.sub(r":(\d{2}):\d{2}", r":\1", dt_str)
+
+    # Step 3: Try known formats
+    known_formats = [
+        "%m/%d/%Y %I:%M %p",     # 12/12/2025 3:45 PM
+        "%m/%d/%Y %H:%M",        # 12/12/2025 15:45
+        "%Y/%m/%d %H:%M",        # 2025/12/12 15:45
+        "%Y/%m/%d %I:%M %p",     # 2025/12/12 3:45 PM
+        "%Y/%m/%d",              # 2025/12/12
+        "%m/%d/%Y",              # 12/12/2025
+        "%B %d, %Y %I:%M %p",    # December 12, 2025 3:45 PM
+        "%b %d, %Y %I:%M %p",    # Dec 12, 2025 3:45 PM
+        "%Y-%m-%d %H:%M",        # ISO-like
+        "%Y-%m-%d %I:%M %p",     # ISO-like with AM/PM
+        "%Y-%m-%d",              # ISO date only
+    ]
+
+    for fmt in known_formats:
+        try:
+            return datetime.strptime(dt_str, fmt)
+        except ValueError:
+            continue
+
+    return None  # No match
+
 def parse_datetime(row, columns):
     start_dt_col = find_column(columns, ["^Start Date[- ]?Time$", "^Start.*Date.*Time$"])
     end_dt_col = find_column(columns, ["^End Date[- ]?Time$", "^End.*Date.*Time$"])
@@ -36,35 +127,55 @@ def parse_datetime(row, columns):
     if start_dt_col and end_dt_col:
         start = row[start_dt_col]
         end = row[end_dt_col]
+        print(f"✅ Using combined datetime columns: {start_dt_col}, {end_dt_col}")
     else:
+        cols_found = True
+        missing = []
         date_col = find_column(columns, ["^Date$"])
         start_date_col = find_column(columns, ["^Start Date$", "^Date$"])
-        start_time_col = find_column(columns, ["^Start Time$", "^Start.*Time$"])
+        start_time_col = find_column(columns, ["^Start Time$", "^Start.*Time$", "^Start$", "^start$"])
         end_date_col = find_column(columns, ["^End Date$", "^Date$"])
-        end_time_col = find_column(columns, ["^End Time$", "^End.*Time$"])
+        end_time_col = find_column(columns, ["^End Time$", "^End.*Time$", "^End$", "^end$"])
+
+        # Define required column pairs
+        required_pairs = [
+            ("date_col", date_col, "start_date_col", start_date_col),
+            ("date_col", date_col, "start_time_col", start_time_col),
+            ("date_col", date_col, "end_date_col", end_date_col),
+            ("date_col", date_col, "end_time_col", end_time_col),
+        ]
+
+        for name1, col1, name2, col2 in required_pairs:
+            if not col1 and not col2:
+                cols_found = False
+                if not col1:
+                    missing.append(f"⚠️ {name1} is missing or empty.")
+                if not col2:
+                    missing.append(f"⚠️ {name2} is missing or empty.")
+
+        if not cols_found:
+            for msg in missing:
+                print(msg)
+            print("❌ Error Finding matching columns")
+            raise ValueError("❌ Error Finding matching columns.")
 
         start_date = row.get(start_date_col) or row.get(date_col)
         start_time = row.get(start_time_col, "00:00")
         end_date = row.get(end_date_col) or row.get(date_col)
         end_time = row.get(end_time_col, "01:00")
 
+        print(f"⚠️ Fallback datetime: {start_date} {start_time} → {end_date} {end_time}")
+        
         start = f"{start_date} {start_time}"
         end = f"{end_date} {end_time}"
 
-    return start.strip(), end.strip()
+        start = clean_datetime_string(start)
+        end = clean_datetime_string(end)
 
-def detect_datetime_format(samples):
-    for fmt in COMMON_FORMATS:
-        try:
-            for start, end in samples:
-                datetime.strptime(start, fmt)
-                datetime.strptime(end, fmt)
-            return fmt
-        except ValueError:
-            continue
-    return None
+    #return start.strip(), end.strip()
+    return start, end
 
-def read_events(csv_file):
+def read_events(csv_file, team_name):
     events_by_team = defaultdict(list)
     samples = []
     with open(csv_file, newline='', encoding="utf-8-sig") as f:
@@ -77,7 +188,7 @@ def read_events(csv_file):
         location_col = find_column(columns, ["^Location$"])
 
         for i, row in enumerate(reader):
-            team = row.get(team_col, "General")
+            team = row.get(team_col, team_name)
             start, end = parse_datetime(row, columns)
 
             if i < 5:
@@ -96,47 +207,7 @@ def read_events(csv_file):
             events_by_team[team].append(event)
     return events_by_team, samples
 
-def create_ics_old(team, events, output_dir, datetime_format):
-    cal = Calendar()
-    
-    # ✅ Use ContentLine for metadata
-    cal.extra.append(ContentLine(name="X-WR-CALNAME", value=team))
-    cal.extra.append(ContentLine(name="NAME", value=team))
-    cal.extra.append(ContentLine(name="X-WR-CALDESC", value="Generated by Mark Hogan's Calendar Builder"))
-
-    for e in events:
-        try:
-            event = Event()
-            event.name = e["title"]
-            event.begin = datetime.strptime(e["start"], datetime_format)
-            event.end = datetime.strptime(e["end"], datetime_format)
-            event.location = e["location"]
-            event.description = e["description"]
-            cal.events.add(event)
-        except ValueError as ve:
-            print(f"❌ Error parsing event '{e['title']}' with format '{datetime_format}': {ve}")
-            raise
-
-    filename = f"{team.replace(' ', '_')}.ics"
-    filepath = os.path.join(output_dir, filename)
-
-     # Add blank lines after header and between events
-    lines = cal.serialize().splitlines()
-    output_lines = []
-    # Add blank line after header (after BEGIN:VCALENDAR)
-    for line in lines:
-        output_lines.append(line)
-        if line.strip() == "BEGIN:VCALENDAR":
-            output_lines.append("")  # Blank line after header
-        elif line.strip() == "END:VEVENT":
-            output_lines.append("")  # Blank line after each event
-
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write("\n".join(output_lines) + "\n")
-
-    return filename
-
-def create_ics(team, events, output_dir, datetime_format, timezone=None, branding=None):
+def create_ics(team, events, output_dir, timezone=None, branding=None):
     cal = Calendar()
 
     # Branding defaults
@@ -152,21 +223,20 @@ def create_ics(team, events, output_dir, datetime_format, timezone=None, brandin
     cal.extra.append(ContentLine(name="X-WR-CALDESC", value=cal_desc))
     if cal_color:
         cal.extra.append(ContentLine(name="X-APPLE-CALENDAR-COLOR", value=cal_color))  # Apple-specific
+    add_ttl(cal, branding)
 
     for e in events:
         try:
             event = Event()
             event.name = e["title"]
-            dt_start = datetime.strptime(e["start"], datetime_format)
-            dt_end = datetime.strptime(e["end"], datetime_format)
-
+            dt_start = e["start"]
+            dt_end = e["end"]
+            
             # Apply timezone if provided
             if timezone:
                 try:
-                    import zoneinfo
-                    tz = zoneinfo.ZoneInfo(timezone)
-                    dt_start = dt_start.replace(tzinfo=tz)
-                    dt_end = dt_end.replace(tzinfo=tz)
+                    dt_start = apply_timezone(dt_start, timezone)
+                    dt_end = apply_timezone(dt_end, timezone)
                 except Exception as tz_err:
                     print(f"⚠️ Timezone error for '{team}': {tz_err}")
 
@@ -176,7 +246,7 @@ def create_ics(team, events, output_dir, datetime_format, timezone=None, brandin
             event.description = e["description"]
             cal.events.add(event)
         except ValueError as ve:
-            print(f"❌ Error parsing event '{e['title']}' with format '{datetime_format}': {ve}")
+            print(f"❌ Error parsing event '{e['title']}': {ve}")
             raise
 
     # Optional footer event
@@ -211,57 +281,33 @@ def generate_download_page(file_list, output_dir):
     with open(page_path, "w", encoding="utf-8") as f:  # ✅ Add encoding
         f.write("# 🗓️ Team Calendar Downloads\n\n")
         for filename in file_list:
-            team_name = filename.replace(".ics", "").replace("_", " ")
+            team_name = filename.replace("_", " ")
             f.write(f"- **{team_name}**: [Download {filename}](./{filename})\n")
 
-# def process_csv(input_path, output_dir="calendars", datetime_format=None):
-    # validate_csv_path(input_path)
-    # ensure_output_dir(output_dir)
-
-    # events_by_team, samples = read_events(input_path)
-
-    # if not datetime_format:
-        # datetime_format = detect_datetime_format(samples)
-        # if not datetime_format:
-            # raise ValueError("Unable to auto-detect datetime format.")
-
-    # generated_files = []
-    # for team, events in events_by_team.items():
-        # filename = create_ics(team, events, output_dir, datetime_format)
-        # generated_files.append(filename)
-
-    # generate_download_page(generated_files, output_dir)
-    # return {
-        # "output_dir": output_dir,
-        # "generated_files": generated_files,
-        # "datetime_format": datetime_format
-    # }
-
-def process_csv(input_or_config, output_dir=None, datetime_format=None):
+def process_csv(input_or_config, output_dir=None):
     # Determine mode: hosted (dict) or CLI (str)
     if isinstance(input_or_config, dict):
         # Hosted mode
         input_path = input_or_config.get("csv")
         output_dir = input_or_config.get("output", "calendars")
-        datetime_format = input_or_config.get("datetime_format", datetime_format)
         timezone = input_or_config.get("timezone")
         branding = input_or_config.get("branding", {})
+        team_name = input_or_config.get("name", "General")
     else:
         # CLI mode
         input_path = input_or_config
         output_dir = output_dir or "calendars"
         timezone = None
         branding = {}
+        team_name = "General"
 
     validate_csv_path(input_path)
     ensure_output_dir(output_dir)
 
-    events_by_team, samples = read_events(input_path)
+    if timezone:
+        print(f"⚠️ Set Timezone to '{timezone}',")
 
-    if not datetime_format:
-        datetime_format = detect_datetime_format(samples)
-        if not datetime_format:
-            raise ValueError("Unable to auto-detect datetime format.")
+    events_by_team, samples = read_events(input_path, team_name)
 
     generated_files = []
     for team, events in events_by_team.items():
@@ -269,7 +315,6 @@ def process_csv(input_or_config, output_dir=None, datetime_format=None):
             team,
             events,
             output_dir,
-            datetime_format,
             timezone=timezone,
             branding=branding
         )
@@ -278,8 +323,7 @@ def process_csv(input_or_config, output_dir=None, datetime_format=None):
     generate_download_page(generated_files, output_dir)
     return {
         "output_dir": output_dir,
-        "generated_files": generated_files,
-        "datetime_format": datetime_format
+        "generated_files": generated_files
     }
 
 def main():
@@ -307,21 +351,17 @@ def main():
 
     print(f"\n📁 Input CSV: {args.input}")
     print(f"📂 Output Directory: {args.output}")
-    if args.datetime_format:
-        print(f"🕒 Manual Format: {args.datetime_format}")
 
     try:
         result = process_csv(
             input_path=args.input,
-            output_dir=args.output,
-            datetime_format=args.datetime_format
+            output_dir=args.output
         )
 
         print(f"\n✅ Generated {len(result['generated_files'])} ICS file(s):")
         for fname in result["generated_files"]:
             print(f"   - {fname}")
         print(f"\n📄 Download page saved to: {os.path.join(result['output_dir'], 'download_links.md')}")
-        print(f"🕒 Datetime format used: {result['datetime_format']}")
 
     except Exception as e:
         print(f"\n❌ Failed to generate calendars: [{type(e).__name__}] {e}")

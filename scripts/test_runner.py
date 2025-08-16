@@ -7,7 +7,7 @@ from csv2ics import process_csv
 from teams import load_teams_config, get_team_by_id, get_user_role
 from utils import validate_csv_path, ensure_output_dir
 
-def run_hosted_calendar_generation(team_id, user_email, datetime_format=None):
+def run_hosted_calendar_generation(team_id, user_email):
     teams = load_teams_config()
     team = get_team_by_id(team_id, teams)
 
@@ -20,8 +20,6 @@ def run_hosted_calendar_generation(team_id, user_email, datetime_format=None):
 
     team["csv"] = team.get("csv", f"data/{team_id}.csv")
     team["output"] = team.get("output", f"docs/calendars/{team_id}")
-    if datetime_format:
-        team["datetime_format"] = datetime_format
 
     try:
         validate_csv_path(team["csv"])
@@ -33,7 +31,6 @@ def run_hosted_calendar_generation(team_id, user_email, datetime_format=None):
         for fname in result["generated_files"]:
             print(f"   - {fname}")
         print(f"\n📄 Download page saved to: {os.path.join(result['output_dir'], 'download_links.md')}")
-        print(f"🕒 Datetime format used: {result['datetime_format']}")
         return result
 
     except Exception as e:
@@ -45,7 +42,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate ICS for a team")
     parser.add_argument("--team", required=True, help="Team ID (e.g. hhs_baseball)")
     parser.add_argument("--user", required=True, help="User email")
-    parser.add_argument("--format", help="Optional datetime format override")
 
     args = parser.parse_args()
-    run_hosted_calendar_generation(args.team, args.user, args.format)
+    run_hosted_calendar_generation(args.team, args.user)

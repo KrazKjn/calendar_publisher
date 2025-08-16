@@ -1,3 +1,3 @@
 # 🗓️ Team Calendar Downloads
 
-- **General**: [Download General.ics](./General.ics)
+- **HHS Baseball.ics**: [Download HHS_Baseball.ics](./HHS_Baseball.ics)
