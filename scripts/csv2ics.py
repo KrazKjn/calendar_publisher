@@ -26,12 +26,15 @@ def apply_timezone1(dt_local, timezone_str):
     Converts naive datetime to aware datetime in the given timezone.
     Assumes input is in local time.
     """
+    return dt_local  # fallback to naive
     try:
         tz = ZoneInfo(timezone_str)
         # Step 1: Assume dt_local is in local time
-        dt_local = dt_local.replace(tzinfo=ZoneInfo("UTC"))  # or your assumed source zone
+        #dt_local = dt_local.replace(tzinfo=ZoneInfo("UTC"))  # or your assumed source zone
+        dt_local = dt_local.replace(tz)  # or your assumed source zone
         # Step 2: Convert to target zone
-        return dt_local.astimezone(tz)
+        #return dt_local.astimezone(tz)
+        return dt_local.astimezone(tzinfo=ZoneInfo("UTC"))
     except Exception as tz_err:
         print(f"⚠️ Timezone error: {tz_err}")
         return dt_local  # fallback to naive
