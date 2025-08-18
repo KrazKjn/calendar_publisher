@@ -388,7 +388,7 @@ def generate_main_index(calendar_dir, output_dir, github_username, repo_name):
         f.write("  <ul>\n")
 
         for folder in sorted(subfolders):
-            url = f"{base_url}/calendar/{folder}/"
+            url = f"{base_url}/{calendar_dir}/{folder}/"
             f.write(f"    <li><a href='{url}' target='_blank'>{folder.replace('_', ' ').title()}</a></li>\n")
 
         f.write("  </ul>\n</body>\n</html>\n")
