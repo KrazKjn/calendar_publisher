@@ -8,7 +8,7 @@ import sys
 import traceback
 import json
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from ics import Calendar, Event
 from ics.grammar.parse import ContentLine
@@ -262,8 +262,21 @@ def create_ics(team, events, output_dir, timezone=None, branding=None):
             dt_start = e["start"]
             dt_end = e["end"]
             
+            is_all_day = (
+                dt_start.time() == datetime.min.time() and
+                dt_end and (dt_end.time() == datetime.min.time() or dt_end.time() == datetime.max.time())
+            )
+
+            if is_all_day:
+                dt_start = dt_start.date()
+                dt_end = dt_start + timedelta(days=1)  # Exclusive end
+            else:
+                if dt_end:
+                    if dt_end <= dt_start:
+                        dt_end = dt_end.replace(hour=23, minute=59, second=59, microsecond=999999)
+
             # Apply timezone if provided
-            if timezone:
+            if timezone and not is_all_day:
                 try:
                     dt_save = dt_start
                     dt_start = apply_timezone(dt_start, timezone)
@@ -272,28 +285,16 @@ def create_ics(team, events, output_dir, timezone=None, branding=None):
                 except Exception as tz_err:
                     print(f"⚠️ Timezone error for '{team}': {tz_err}")
 
-            is_all_day = (
-                dt_start.time() == datetime.min.time() and
-                dt_end and (dt_end.time() == datetime.min.time() or dt_end.time() == datetime.max.time())
-            )
-
-            if is_all_day:
-                event.begin = dt_start.date()
-                event.end = dt_start.date() + timedelta(days=1)  # Exclusive end
-            else:
+            if dt_start:
                 event.begin = dt_start
-                if dt_end:
-                    if dt_end <= dt_start:
-                        dt_end = dt_end.replace(hour=23, minute=59, second=59, microsecond=999999)
-                    event.end = dt_end
+            if dt_end:
+                event.end = dt_end
 
             event.location = e["location"]
             event.description = e["description"]
             cal.events.add(event)
         except ValueError as ve:
             print(f"❌ Error parsing event '{e['title']}': {ve}")
-            print(f"❌     event dt_start: : {dt_start}")
-            print(f"❌     event dt_end: : {dt_end}")
             raise
 
     # Optional footer event
