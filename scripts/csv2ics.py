@@ -11,7 +11,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from ics import Calendar, Event
-from ics.grammar.parse import ContentLine
+from ics.grammar.parse import ContentLine, Container
 from utils import validate_csv_path, ensure_output_dir, get_first_folder_from_path
 
 GITHUB_USERNAME = None
@@ -216,6 +216,7 @@ def read_events(csv_file, team_name):
         title_col = find_column(columns, ["^Event Title$", "^Title$"])
         desc_col = find_column(columns, ["^Description$"])
         location_col = find_column(columns, ["^Location$"])
+        alarms_col = find_column(columns, ["^Alarms$"])
 
         for i, row in enumerate(reader):
             team = row.get(team_col, team_name)
@@ -232,11 +233,63 @@ def read_events(csv_file, team_name):
                 "start": start,
                 "end": end,
                 "location": row.get(location_col, ""),
-                "description": description
+                "description": description,
+                "alarms": row.get(alarms_col, "")
             }
             events_by_team[team].append(event)
     return events_by_team, samples
 
+def create_alarm(trigger, description):
+    alarm = Container(name="VALARM")
+    alarm.append(f"TRIGGER:{trigger}")
+    alarm.append("ACTION:DISPLAY")
+    alarm.append(f"DESCRIPTION:{description}")
+    return alarm
+
+from ics.grammar.parse import Container
+
+def parse_alarm_string(alarm_str):
+    """
+    Parses a string like "-01:00,+00:15" into ICS-compatible TRIGGERs.
+    Returns a list of (trigger, description) tuples.
+    """
+    alarms = []
+    for raw in alarm_str.split(","):
+        raw = raw.strip()
+        if not raw:
+            continue
+
+        sign = "-" if raw.startswith("-") else "+"
+        time_part = raw.lstrip("+-")
+        try:
+            hours, minutes = map(int, time_part.split(":"))
+        except ValueError:
+            print(f"⚠️ Invalid alarm format: {raw}")
+            continue
+
+        # Build ISO 8601 duration
+        duration = f"{sign}PT"
+        if hours:
+            duration += f"{hours}H"
+        if minutes:
+            duration += f"{minutes}M"
+        if not (hours or minutes):
+            duration += "0M"
+
+        # Build description
+        desc = f"Reminder - {hours}h {minutes}m {'before' if sign == '-' else 'after'}"
+        
+        alarms.append((duration, desc))
+    return alarms
+
+def add_alarms_to_event(event, alarm_str):
+    for trigger, description in parse_alarm_string(alarm_str):
+        alarm = Container(name="VALARM")
+        alarm.append(ContentLine(name="TRIGGER", value=trigger))
+        alarm.append(ContentLine(name="ACTION", value="DISPLAY"))
+        alarm.append(ContentLine(name="DESCRIPTION", value=description))
+        event.extra.append(alarm)
+        
 def create_ics(team, events, output_dir, timezone=None, branding=None):
     cal = Calendar()
 
@@ -289,7 +342,10 @@ def create_ics(team, events, output_dir, timezone=None, branding=None):
                 event.begin = dt_start
             if dt_end:
                 event.end = dt_end
-
+                
+            if e["alarms"]:
+                add_alarms_to_event(event, e["alarms"])
+                
             event.location = e["location"]
             event.description = e["description"]
             cal.events.add(event)
