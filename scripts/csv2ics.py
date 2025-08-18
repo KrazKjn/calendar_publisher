@@ -267,17 +267,26 @@ def create_ics(team, events, output_dir, timezone=None, branding=None):
                 try:
                     dt_save = dt_start
                     dt_start = apply_timezone(dt_start, timezone)
-                    print(f"⚠️ apply_timezone '{dt_save}': {timezone} = {dt_start}")
+                    #print(f"⚠️ apply_timezone '{dt_save}': {timezone} = {dt_start}")
                     dt_end = apply_timezone(dt_end, timezone)
                 except Exception as tz_err:
                     print(f"⚠️ Timezone error for '{team}': {tz_err}")
 
-            if dt_start:
+            is_all_day = (
+                dt_start.time() == datetime.min.time() and
+                dt_end and (dt_end.time() == datetime.min.time() or dt_end.time() == datetime.max.time())
+            )
+
+            if is_all_day:
+                event.begin = dt_start.date()
+                event.end = dt_start.date() + timedelta(days=1)  # Exclusive end
+            else:
                 event.begin = dt_start
-            if dt_end:
-                if dt_end < dt_start:
-                    dt_end = dt_end.replace(hour=23, minute=59, second=59, microsecond=0)
-                event.end = dt_end
+                if dt_end:
+                    if dt_end <= dt_start:
+                        dt_end = dt_end.replace(hour=23, minute=59, second=59, microsecond=999999)
+                    event.end = dt_end
+
             event.location = e["location"]
             event.description = e["description"]
             cal.events.add(event)
