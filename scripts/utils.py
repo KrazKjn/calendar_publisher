@@ -10,3 +10,7 @@ def validate_csv_path(path):
 
 def ensure_output_dir(path):
     os.makedirs(path, exist_ok=True)
+
+def get_first_folder_from_path(path_str):
+    parts = path_str.strip("/").split("/")
+    return parts[0] if parts else None

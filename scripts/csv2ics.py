@@ -12,7 +12,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from ics import Calendar, Event
 from ics.grammar.parse import ContentLine
-from utils import validate_csv_path, ensure_output_dir
+from utils import validate_csv_path, ensure_output_dir, get_first_folder_from_path
 
 GITHUB_USERNAME = None
 REPO_NAME = None
@@ -272,13 +272,19 @@ def create_ics(team, events, output_dir, timezone=None, branding=None):
                 except Exception as tz_err:
                     print(f"⚠️ Timezone error for '{team}': {tz_err}")
 
-            event.begin = dt_start
-            event.end = dt_end
+            if dt_start:
+                event.begin = dt_start
+            if dt_end:
+                if dt_end < dt_start:
+                    dt_end = dt_end.replace(hour=23, minute=59, second=59, microsecond=0)
+                event.end = dt_end
             event.location = e["location"]
             event.description = e["description"]
             cal.events.add(event)
         except ValueError as ve:
             print(f"❌ Error parsing event '{e['title']}': {ve}")
+            print(f"❌     event dt_start: : {dt_start}")
+            print(f"❌     event dt_end: : {dt_end}")
             raise
 
     # Optional footer event
@@ -318,7 +324,74 @@ def generate_download_page(file_list, output_dir, github_username, repo_name, fo
             path = f"{folder}/{filename}" if folder else filename
             download_url = f"{base_url}/{path}"
             webcal_url = f"webcal://{base_url}/{path}"
-            f.write(f"- **{team_name}**: [Download]({download_url}) | [Subscribe]({webcal_url})\n")            
+            f.write(f"- **{team_name}**: [Download]({download_url}) | [Subscribe]({webcal_url})\n")
+
+def generate_index_html(file_list, output_dir, github_username, repo_name, folder=None):
+    base_url = f"{github_username}.github.io/{repo_name}"
+    page_path = os.path.join(output_dir, "index.html")
+
+    with open(page_path, "w", encoding="utf-8") as f:
+        f.write("<!DOCTYPE html>\n")
+        f.write("<html lang='en'>\n")
+        f.write("<head>\n")
+        f.write("  <meta charset='UTF-8'>\n")
+        f.write("  <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n")
+        f.write("  <title>Team Calendar Links</title>\n")
+        f.write("  <style>\n")
+        f.write("    body { font-family: Arial, sans-serif; padding: 2em; }\n")
+        f.write("    h1 { color: #2c3e50; }\n")
+        f.write("    ul { list-style-type: none; padding: 0; }\n")
+        f.write("    li { margin: 1em 0; }\n")
+        f.write("    a { margin-right: 1em; text-decoration: none; color: #2980b9; }\n")
+        f.write("  </style>\n")
+        f.write("</head>\n")
+        f.write("<body>\n")
+        f.write("  <h1>🗓️ Team Calendar Links</h1>\n")
+        f.write("  <ul>\n")
+
+        for filename in file_list:
+            team_name = filename.replace("_", " ").replace(".ics", "")
+            path = f"{folder}/{filename}" if folder else filename
+            download_url = f"https://{base_url}/{path}"
+            webcal_url = f"webcal://{base_url}/{path}"
+
+            f.write("    <li>\n")
+            f.write(f"      <strong>{team_name}</strong><br>\n")
+            f.write(f"      <a href='{download_url}' target='_blank'>Download</a>\n")
+            f.write(f"      <a href='{webcal_url}' target='_blank'>Subscribe</a>\n")
+            f.write("    </li>\n")
+
+        f.write("  </ul>\n")
+        f.write("</body>\n")
+        f.write("</html>\n")
+
+def generate_main_index(calendar_dir, output_dir, github_username, repo_name):
+    #print(f"⚠️ '{calendar_dir}': {calendar_dir}")    
+    #print(f"⚠️ '{output_dir}': {output_dir}")    
+    #print(f"⚠️ '{github_username}': {github_username}")    
+    #print(f"⚠️ '{repo_name}': {repo_name}")    
+    base_url = f"https://{github_username}.github.io/{repo_name}"
+    page_path = os.path.join(output_dir, "index.html")
+    #print(f"⚠️ '{base_url}': {base_url}")    
+    #print(f"⚠️ '{page_path}': {page_path}")    
+
+    subfolders = [name for name in os.listdir(calendar_dir)
+                  if os.path.isdir(os.path.join(calendar_dir, name))]
+
+    with open(page_path, "w", encoding="utf-8") as f:
+        f.write("<!DOCTYPE html>\n<html lang='en'>\n<head>\n")
+        f.write("  <meta charset='UTF-8'>\n")
+        f.write("  <title>Team Calendars</title>\n")
+        f.write("  <style>body { font-family: sans-serif; padding: 2em; }</style>\n")
+        f.write("</head>\n<body>\n")
+        f.write("  <h1>📁 Team Calendars</h1>\n")
+        f.write("  <ul>\n")
+
+        for folder in sorted(subfolders):
+            url = f"{base_url}/calendar/{folder}/"
+            f.write(f"    <li><a href='{url}' target='_blank'>{folder.replace('_', ' ').title()}</a></li>\n")
+
+        f.write("  </ul>\n</body>\n</html>\n")
 
 def process_csv(input_or_config, output_dir=None):
     load_settings()
@@ -364,6 +437,20 @@ def process_csv(input_or_config, output_dir=None):
         repo_name=REPO_NAME,
         folder=output_dir
     )
+    generate_index_html(
+        generated_files,
+        output_dir,
+        github_username=GITHUB_USERNAME,
+        repo_name=REPO_NAME,
+        folder=output_dir
+    )
+    generate_main_index(
+        calendar_dir=get_first_folder_from_path(output_dir),
+        output_dir="docs",
+        github_username=GITHUB_USERNAME,
+        repo_name=REPO_NAME
+    )
+
     return {
         "output_dir": output_dir,
         "generated_files": generated_files
