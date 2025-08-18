@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>📅 Team Calendar Publisher</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; max-width: 800px; }
+    h1, h2 { color: #2c3e50; }
+    form { margin-bottom: 2em; }
+    label { display: block; margin-top: 1em; }
+    input, select { padding: 0.5em; width: 100%; max-width: 400px; }
+    button { margin-top: 1em; padding: 0.5em 1em; }
+    .downloads { margin-top: 3em; }
+    ul { list-style: none; padding-left: 0; }
+    li { margin-bottom: 0.5em; }
+  </style>
+</head>
+<body>
+  <h1>📅 Team Calendar Publisher</h1>
+
+  <form>
+    <label for="user">Your Email:</label>
+    <input type="email" name="user" required disabled />
+
+    <label for="team">Team ID:</label>
+    <input type="text" name="team" required disabled />
+
+    <label for="file">CSV File:</label>
+    <input type="file" name="file" accept=".csv" required disabled />
+
+    <button type="submit" disabled>Upload & Generate</button>
+    <p><em>Upload is disabled on GitHub Pages. Use CLI or hosted backend.</em></p>
+  </form>
+
+  <div class="downloads">
+    <h2>📥 Available Calendars</h2>
+    <ul>
+      <li><a href="../calendars/hhs_baseball/General.ics" target="_blank">HHS Basball Calendar</a></li>
+      <!-- <li><a href="../calendars/hhs_baseball/download_links.md" target="_blank">Download Links (Markdown)</a></li> -->
+      <li><a href="../calendars/sample/General.ics" target="_blank">Sample Calendar</a></li>
+    </ul>
+  </div>
+</body>
+</html>
