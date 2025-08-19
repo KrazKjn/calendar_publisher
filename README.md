@@ -26,4 +26,5 @@ python csv2ics.py --input events.csv --output calendars
 
 This will generate .ics files for each team or group and create a download_links.md file and web page with branded links.
 
-**Tags:** `#automation` `#scripting` `#python`
+## 📌 Tags
+`#automation` `#scripting` `#python`
