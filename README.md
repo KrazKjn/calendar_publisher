@@ -22,7 +22,7 @@ With this project, I can quickly update a CSV spreadsheet, generate `.ics` files
 ### 🔧 Usage
 
 ```bash
-python csv2ics.py --input events.csv --output calendars
+python scripts/test_runner.py --team hhs_volleyball --user fake.coach.hhsvb@gmail.com
 
 This will generate .ics files for each team or group and create a download_links.md file and web page with branded links.
 ```
