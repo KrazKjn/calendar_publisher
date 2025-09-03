@@ -20,6 +20,7 @@ def run_hosted_calendar_generation(team_id, user_email):
 
     team["csv"] = team.get("csv", f"data/{team_id}.csv")
     team["output"] = team.get("output", f"docs/calendars/{team_id}")
+    team["event_types"] = team.get("event_types")
 
     try:
         validate_csv_path(team["csv"])

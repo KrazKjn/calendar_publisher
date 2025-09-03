@@ -23,6 +23,29 @@
 	  }
 	},
     {
+      "id": "hhs_volleyball_games",
+      "name": "HHS Volleyball - Games",
+      "color": "#bf922a",
+      "logo": "assets/hhs_volleyball-logo.png",
+      "csv": "data/hhs_volleyball.csv",
+      "output": "calendars/hhs_volleyball_games",
+	  "event_types": [ "game" ],
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.hhsvb@gmail.com",
+        "krazkjn@msn.com"
+      ],
+      "role_map": {
+        "coach.hhsvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      },
+	  "branding": {
+		"calendar_name": "HHS Volleyball",
+		"calendar_desc": "HHS Volleyball Games",
+		"ttl": "PT1H"
+	  }
+	},
+    {
       "id": "hhs_baseball",
       "name": "HHS Baseball",
       "color": "#441C55",

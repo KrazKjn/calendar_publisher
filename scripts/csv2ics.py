@@ -205,9 +205,13 @@ def parse_datetime(row, columns):
     #return start.strip(), end.strip()
     return start, end
 
-def read_events(csv_file, team_name):
+def read_events(csv_file, team_name, event_types=None):
     events_by_team = defaultdict(list)
     samples = []
+
+    # Normalize event_types to lowercase if provided
+    allowed_types = set(t.lower() for t in event_types) if event_types else None
+
     with open(csv_file, newline='', encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         columns = reader.fieldnames
@@ -217,6 +221,7 @@ def read_events(csv_file, team_name):
         desc_col = find_column(columns, ["^Description$"])
         location_col = find_column(columns, ["^Location$"])
         alarms_col = find_column(columns, ["^Alarms$"])
+        event_type_col = find_column(columns, ["^Type$"])
 
         for i, row in enumerate(reader):
             team = row.get(team_col, team_name)
@@ -227,7 +232,16 @@ def read_events(csv_file, team_name):
 
             title = row.get(title_col) or row.get(desc_col) or "Untitled Event"
             description = row.get(desc_col) or row.get(title_col) or ""
+            event_type = (row.get(event_type_col) or "").strip().lower()
 
+            # Skip event if filtering is enabled and type doesn't match
+            if allowed_types:
+                if event_type not in allowed_types:
+                    #print(f"⚠️ Skipping Event Type [{event_type}]. {title}.")
+                    continue
+                else:
+                    print(f"⚠️ Processing Event Type [{event_type}]. {title}.")
+                
             event = {
                 "title": title,
                 "start": start,
@@ -459,7 +473,7 @@ def generate_main_index(calendar_dir, output_dir, github_username, repo_name):
 
         f.write("  </ul>\n</body>\n</html>\n")
 
-def process_csv(input_or_config, output_dir=None):
+def process_csv(input_or_config, output_dir=None, event_types=None):
     load_settings()
     # Determine mode: hosted (dict) or CLI (str)
     if isinstance(input_or_config, dict):
@@ -469,6 +483,7 @@ def process_csv(input_or_config, output_dir=None):
         timezone = input_or_config.get("timezone")
         branding = input_or_config.get("branding", {})
         team_name = input_or_config.get("name", "General")
+        event_types = input_or_config.get("event_types")        
     else:
         # CLI mode
         input_path = input_or_config
@@ -476,6 +491,7 @@ def process_csv(input_or_config, output_dir=None):
         timezone = None
         branding = {}
         team_name = "General"
+        event_types = None
 
     validate_csv_path(input_path)
     ensure_output_dir(output_dir)
@@ -483,7 +499,8 @@ def process_csv(input_or_config, output_dir=None):
     if timezone:
         print(f"⚠️ Set Timezone to '{timezone}',")
 
-    events_by_team, samples = read_events(input_path, team_name)
+    print(f"📄 Event Types: {event_types}")
+    events_by_team, samples = read_events(input_path, team_name, event_types)
 
     generated_files = []
     for team, events in events_by_team.items():
