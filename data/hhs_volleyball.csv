@@ -4,7 +4,7 @@ Date,Start,End,Description,Location,Alarms,Type
 8/20/2025,14:30,16:30,HHS Volleyball - Practice,HHS,,
 8/21/2025,16:30,17:30,HHS Volleyball - East Ascension ,"612 E Worthy St, Gonzales, LA 70737","-1:00,-2:00",Game
 8/21/2025,17:30,18:30,HHS Volleyball - Dunham,"612 E Worthy St, Gonzales, LA 70737","-1:00,-2:00",Game
-8/22/2025,14:30,16:30,HHS Volleyball - Inner-Squad Scrimmage,HHS,"-1:00,-2:00",
+8/22/2025,14:30,16:30,HHS Volleyball - Inner-Squad Scrimmage,HHS,"-1:00,-2:00",Game
 8/25/2025,14:30,17:30,HHS Volleyball - Practice + W,HHS,,
 8/26/2025,14:15,14:45,HHS Volleyball - Pre-game meal (bring your own),HHS,,
 8/26/2025,14:45,15:00,HHS Volleyball - Dress and Gym Setup,HHS,,
@@ -29,10 +29,10 @@ Date,Start,End,Description,Location,Alarms,Type
 9/9/2025,5:00 PM,,"HHS Volleyball - @ Dunham (JV,V)",Dunham,,Game
 9/10/2025,4:30 PM,,"HHS Volleyball - Vs Assumption (F,JV,V)",HHS,,Game
 9/11/2025,2:30 PM,5:30 PM,HHS Volleyball - Practice + W,HHS,,
-9/12/2025,,,HHS Volleyball - Dutchtown Tournament (V),HHS,,
-9/13/2025,,,HHS Volleyball - Assumption T (F),HHS,,
+9/12/2025,,,HHS Volleyball - Dutchtown Tournament (V),HHS,,Game
+9/13/2025,,,HHS Volleyball - Assumption T (F),HHS,,Game
 9/15/2025,2:30 PM,5:30 PM,HHS Volleyball - Practice + W,HHS,,
-9/16/2025,4:00 PM,,"HHS Volleyball - @ Lutcher (F,JV,V)",Lutcher,,
+9/16/2025,4:00 PM,,"HHS Volleyball - @ Lutcher (F,JV,V)",Lutcher,,Game
 9/17/2025,2:30 PM,4:30 PM,HHS Volleyball - Practice,HHS,,
 9/18/2025,4:30 PM,,"HHS Volleyball - Vs Mt Carmel (JV,V)",HHS,,Game
 9/19/2025,2:30 PM,4:30 PM,HHS Volleyball - Practice + W,HHS,,
