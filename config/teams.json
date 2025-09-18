@@ -66,6 +66,51 @@
 		"calendar_desc": "HHS Baseball Events",
 		"ttl": "PT1H"
 	  }
-    }
+    },
+    {
+      "id": "jbm_volleyball",
+      "name": "JBM Volleyball",
+      "color": "#bf922a",
+      "logo": "assets/jbm_volleyball-logo.png",
+      "csv": "data/jbm_volleyball.csv",
+      "output": "calendars/jbm_volleyball",
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.jbmvb@gmail.com",
+        "krazkjn@msn.com"
+      ],
+      "role_map": {
+        "coach.jbmvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      },
+	  "branding": {
+		"calendar_name": "JBM Volleyball",
+		"calendar_desc": "JBM Volleyball Events",
+		"ttl": "PT1H"
+	  }
+	},
+    {
+      "id": "jbm_volleyball_games",
+      "name": "JBM Volleyball - Games",
+      "color": "#bf922a",
+      "logo": "assets/jbm_volleyball-logo.png",
+      "csv": "data/jbm_volleyball.csv",
+      "output": "calendars/jbm_volleyball_games",
+	  "event_types": [ "game" ],
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.jbmvb@gmail.com",
+        "krazkjn@msn.com"
+      ],
+      "role_map": {
+        "coach.jbmvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      },
+	  "branding": {
+		"calendar_name": "JBM Volleyball",
+		"calendar_desc": "JBM Volleyball Games",
+		"ttl": "PT1H"
+	  }
+	}
   ]
 }
