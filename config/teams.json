@@ -68,6 +68,75 @@
 	  }
     },
     {
+      "id": "hhs_baseball_varsity",
+      "name": "HHS Varsity Baseball",
+      "color": "#441C55",
+      "logo": "assets/hhs_baseball_varsity-logo.png",
+      "csv": "data/hhs_baseball_varsity.csv",
+      "output": "calendars/hhs_baseball_varsity",
+	  "event_types": [ "game" ],
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.hhsvb@gmail.com",
+        "krazkjn@msn.com"
+      ],
+      "role_map": {
+        "coach.hhsvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      },
+	  "branding": {
+		"calendar_name": "HHS Varsity Baseball",
+		"calendar_desc": "HHS Varsity Baseball Events",
+		"ttl": "PT1H"
+	  }
+    },
+    {
+      "id": "hhs_baseball_jv_purple",
+      "name": "HHS JV Purple Baseball",
+      "color": "#441C55",
+      "logo": "assets/hhs_baseball_jv_purple-logo.png",
+      "csv": "data/hhs_baseball_jv_purple.csv",
+      "output": "calendars/hhs_baseball_jv_purple",
+	  "event_types": [ "game" ],
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.hhsvb@gmail.com",
+        "krazkjn@msn.com"
+      ],
+      "role_map": {
+        "coach.hhsvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      },
+	  "branding": {
+		"calendar_name": "HHS JV Purple Baseball",
+		"calendar_desc": "HHS JV Purple Baseball Events",
+		"ttl": "PT1H"
+	  }
+    },
+    {
+      "id": "hhs_baseball_jv_gold",
+      "name": "HHS JV Gold Baseball",
+      "color": "#441C55",
+      "logo": "assets/hhs_baseball_jv_gold-logo.png",
+      "csv": "data/hhs_baseball_jv_gold.csv",
+      "output": "calendars/hhs_baseball_jv_gold",
+	  "event_types": [ "game" ],
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.hhsvb@gmail.com",
+        "krazkjn@msn.com"
+      ],
+      "role_map": {
+        "coach.hhsvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      },
+	  "branding": {
+		"calendar_name": "HHS JV Gold Baseball",
+		"calendar_desc": "HHS JV Gold Baseball Events",
+		"ttl": "PT1H"
+	  }
+    },
+    {
       "id": "jbm_volleyball",
       "name": "JBM Volleyball",
       "color": "#bf922a",
@@ -109,6 +178,29 @@
 	  "branding": {
 		"calendar_name": "JBM Volleyball",
 		"calendar_desc": "JBM Volleyball Games",
+		"ttl": "PT1H"
+	  }
+	},
+    {
+      "id": "hhs_girls_soccer_games",
+      "name": "HHS Girl's Soccer - Games",
+      "color": "#bf922a",
+      "logo": "assets/hhs_girls_soccer-logo.png",
+      "csv": "data/hhs_girls_soccer.csv",
+      "output": "calendars/hhs_girls_soccer_games",
+	  "event_types": [ "game" ],
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.hhsvb@gmail.com",
+        "krazkjn@msn.com"
+      ],
+      "role_map": {
+        "coach.hhsvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      },
+	  "branding": {
+		"calendar_name": "HHS Girl's Soccer",
+		"calendar_desc": "HHS Girl's Soccer Games",
 		"ttl": "PT1H"
 	  }
 	}
