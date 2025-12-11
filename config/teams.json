@@ -183,7 +183,7 @@
 	},
     {
       "id": "hhs_girls_soccer_games",
-      "name": "HHS Girl's Soccer - Games",
+      "name": "HHS Lady Tigers Soccer - Games",
       "color": "#bf922a",
       "logo": "assets/hhs_girls_soccer-logo.png",
       "csv": "data/hhs_girls_soccer.csv",
@@ -199,8 +199,8 @@
         "krazkjn@msn.com": "viewer"
       },
 	  "branding": {
-		"calendar_name": "HHS Girl's Soccer",
-		"calendar_desc": "HHS Girl's Soccer Games",
+		"calendar_name": "HHS Lady Tigers Soccer",
+		"calendar_desc": "HHS Lady Tigers Soccer Games",
 		"ttl": "PT1H"
 	  }
 	}
