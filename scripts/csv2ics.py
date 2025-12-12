@@ -310,7 +310,7 @@ def create_ics(team, events, output_dir, timezone=None, branding=None):
     # Branding defaults
     branding = branding or {}
     cal_name = branding.get("name", team)
-    cal_desc = branding.get("description", f"Calendar for {team}")
+    cal_desc = branding.get("description", f"Calendar for {cal_name}")
     cal_color = branding.get("color")  # Optional, not standard in ICS
     cal_footer = branding.get("footer", "")
 
@@ -468,8 +468,13 @@ def generate_main_index(calendar_dir, output_dir, github_username, repo_name):
         f.write("  <ul>\n")
 
         for folder in sorted(subfolders):
-            url = f"{base_url}/{calendar_dir}/{folder}/"
-            f.write(f"    <li><a href='{url}' target='_blank'>{folder.replace('_', ' ').title()}</a></li>\n")
+            folder_path = os.path.join(calendar_dir, folder)
+            ics_files = [f for f in os.listdir(folder_path) if f.endswith('.ics')]
+    
+            if ics_files:
+                display_name = os.path.splitext(ics_files[0])[0].replace('_', ' ') #.title()
+                url = f"{base_url}/{calendar_dir}/{folder}/"
+                f.write(f"    <li><a href='{url}' target='_blank'>{display_name}</a></li>\n")
 
         f.write("  </ul>\n</body>\n</html>\n")
 
