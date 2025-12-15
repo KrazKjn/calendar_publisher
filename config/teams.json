@@ -203,6 +203,29 @@
 		"calendar_desc": "HHS Lady Tigers Soccer Games",
 		"ttl": "PT1H"
 	  }
+	},
+    {
+      "id": "hhs_girls_soccer_training",
+      "name": "HHS Lady Tigers Soccer - Training",
+      "color": "#bf922a",
+      "logo": "assets/hhs_girls_soccer-logo.png",
+      "csv": "data/hhs_girls_soccer.csv",
+      "output": "calendars/hhs_girls_soccer_training",
+	  "event_types": [ "training" ],
+      "timezone": "America/Chicago",
+      "allowed_users": [
+        "coach.hhsvb@gmail.com",
+        "krazkjn@msn.com"
+      ],
+      "role_map": {
+        "coach.hhsvb@gmail.com": "editor",
+        "krazkjn@msn.com": "viewer"
+      },
+	  "branding": {
+		"calendar_name": "HHS Lady Tigers Soccer - Training",
+		"calendar_desc": "HHS Lady Tigers Soccer training",
+		"ttl": "PT1H"
+	  }
 	}
   ]
 }
