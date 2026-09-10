@@ -382,15 +382,36 @@ def create_ics(team, events, output_dir, timezone=None, branding=None):
     # Add blank lines after header and between events
     lines = cal.serialize().splitlines()
     output_lines = []
+    
     for line in lines:
         output_lines.append(line)
+        
         if line.strip() == "BEGIN:VCALENDAR":
             output_lines.append("")
         elif line.strip() == "END:VEVENT":
             output_lines.append("")
 
+    # --- FIX ALL-DAY EVENTS (replace UTC midnight with VALUE=DATE) ---
+    fixed_lines = []
+    for line in output_lines:
+
+        # Fix DTSTART for all-day events
+        if line.startswith("DTSTART:") and line.endswith("T000000Z"):
+            yyyymmdd = line[8:16]
+            fixed_lines.append(f"DTSTART;VALUE=DATE:{yyyymmdd}")
+            continue
+
+        # Fix DTEND for all-day events
+        if line.startswith("DTEND:") and line.endswith("T000000Z"):
+            yyyymmdd = line[6:14]
+            fixed_lines.append(f"DTEND;VALUE=DATE:{yyyymmdd}")
+            continue
+
+        fixed_lines.append(line)
+
+    # Write final ICS file
     with open(filepath, "w", encoding="utf-8") as f:
-        f.write("\n".join(output_lines) + "\n")
+        f.write("\n".join(fixed_lines) + "\n")
 
     return filename
 
